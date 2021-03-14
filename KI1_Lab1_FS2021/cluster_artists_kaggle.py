@@ -10,6 +10,7 @@ import numpy
 import json
 import pdb
 import re
+import pandas as pd
 from scipy.cluster.hierarchy import linkage, dendrogram
 from sklearn.feature_extraction.text import TfidfVectorizer
 from matplotlib import pyplot as plt
@@ -36,41 +37,43 @@ def words_per_artist(artist_lyrics, lyrics_tfidf_matrix, ix2word, n=10):
     For each artist, print the most highly weighted words acc. to TF IDF 
     Print n words that are above the mean weight 
     """
-    # TODO implement it
     
-def calc_lyrics_tfidf_matrix(lyrics):
-    lyrics_tfidf_matrix = {}
-    N = len(lyrics)
-    for i in range(N):
-        document = lyrics[i]
-        for word in numpy.unique(document.split(" ")):
-            tf = frequency(word, document)
-            df = number_docs_containing_word(word, lyrics)
-            idf = numpy.log(N / df)
-            w = tf * idf
-            lyrics_tfidf_matrix[i, word] = w        
-    return lyrics_tfidf_matrix
-
-def frequency(word, document):
-    count = 0
-    for wordInDoc in numpy.nditer(document):
-        if word == wordInDoc:
-            count = count + 1
-    return count
+    df = pd.DataFrame(lyrics_tfidf_matrix.todense())
     
-    
-def number_docs_containing_word(word, documents):
-    count = 0
-    for i in range(len(documents)):
-        document = documents[i]
-        for wordInDoc in numpy.unique(document):
-            if wordInDoc == word:
-                count = count + 1
-                break
-    return count
+    for idx, artist in enumerate(artist_lyrics.keys()):
+        words_of_artist = df.iloc[idx]
+        
+        word_dict = {}
+        
+        # iterate over words and filter non zero
+        for wordIdx, value in enumerate(words_of_artist):
+            if value != 0:
+                word_dict[wordIdx] = value
+                
+        # mean weight
+        mean_weight = sum(word_dict.values()) / len(word_dict)
+        
+        
+        # sort dict
+        top_ten_words = dict(sorted(word_dict.items(), key=lambda item: item[1], reverse=True)[:n])
+        
+        
+        # print top ten words
+        for wordIdx in top_ten_words:
+            # change word from idx to word
+            word = ix2word[wordIdx]
+            tf_idf = top_ten_words[wordIdx]
             
-
-     
+            # check if over mean weight
+            if tf_idf > mean_weight:
+                print(artist, word, tf_idf)
+             
+def getIx2Word(words):
+    ix2word = {}
+    for idx,word in enumerate(words):
+        ix2word[idx] = word
+    return ix2word
+                 
 
 if __name__ == '__main__':
     
@@ -83,11 +86,12 @@ if __name__ == '__main__':
     print('Vectorizing with TF IDF')
     # Vectorize the song lyrics
     # TODO implement; create lyrics_tfidf_matrix (artist/word matrix) and ix2word (dict that maps word IDs to words)
-    lyrics_tfidf_matrix = calc_lyrics_tfidf_matrix(lyrics)
-    print(lyrics_tfidf_matrix)
+    vectorizer = TfidfVectorizer(stop_words = 'english')
+    lyrics_tfidf_matrix = vectorizer.fit_transform(lyrics)
+    ix2word = getIx2Word(vectorizer.get_feature_names())
     
     print('Distinct words per artist')
-    #words_per_artist(artist_lyrics, lyrics_tfidf_matrix, ix2word)
+    words_per_artist(artist_lyrics, lyrics_tfidf_matrix, ix2word)
 
     print('Clustering')
     # TODO call SciPy's hierarchical clustering 
