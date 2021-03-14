@@ -1,0 +1,12 @@
+In order to run the Jupyter notebook you need to install the following:
+- Anaconda https://www.anaconda.com/distribution/ with Python version 3.7
+- Download Anaconda for your OS and then just follow the installation instructions.
+- To install the environment from the yml file execute: conda env create -f ki2_fs2020_env.yml
+- To install the environment manually do the following steps:
+	- conda create --name ki2_fs2020_env python=3.7
+	- activate ki2_fs2020_env
+	- conda install nb_conda #installs the notebook functionality we need
+	- conda install -c conda-forge matplotlib
+	- conda install seaborn
+	- pip install cycler
+	- conda install scikit-learn

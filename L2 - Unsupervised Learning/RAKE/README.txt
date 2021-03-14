@@ -1,0 +1,1 @@
+python evaluate_extractor.py -f example_text.txt
