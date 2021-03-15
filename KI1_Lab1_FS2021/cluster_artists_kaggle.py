@@ -38,9 +38,12 @@ def words_per_artist(artist_lyrics, lyrics_tfidf_matrix, ix2word, n=10):
     Print n words that are above the mean weight 
     """
     
+    # transform matrix to dataframe -> easier to work with
     df = pd.DataFrame(lyrics_tfidf_matrix.todense())
     
     for idx, artist in enumerate(artist_lyrics.keys()):
+        
+        # get words with rating of artist
         words_of_artist = df.iloc[idx]
         
         word_dict = {}
@@ -54,7 +57,7 @@ def words_per_artist(artist_lyrics, lyrics_tfidf_matrix, ix2word, n=10):
         mean_weight = sum(word_dict.values()) / len(word_dict)
         
         
-        # sort dict
+        # sort dict after tfidf, descending and choose top ten
         top_ten_words = dict(sorted(word_dict.items(), key=lambda item: item[1], reverse=True)[:n])
         
         
