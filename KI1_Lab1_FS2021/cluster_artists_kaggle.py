@@ -13,6 +13,7 @@ import re
 import pandas as pd
 from scipy.cluster.hierarchy import linkage, dendrogram
 from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.cluster import KMeans
 from matplotlib import pyplot as plt
 
 def plot_dendrogram(clustered, artists):
@@ -97,8 +98,16 @@ if __name__ == '__main__':
     words_per_artist(artist_lyrics, lyrics_tfidf_matrix, ix2word)
 
     print('Clustering')
-    # TODO call SciPy's hierarchical clustering 
+    clustered = KMeans(n_clusters=10, n_init=50).fit(lyrics_tfidf_matrix)
+    order_centers = clustered.cluster_centers_.argsort()[:, ::-1]
+    terms = vectorizer.get_feature_names()
+    for i in range(10):
+        print("Cluster %d" % i)
+        for ind in order_centers[i, :30]:
+            print(';%s' % terms[ind])
+        print("\n")
 
     print('Plotting')
     artist_names = [a+': '+artist2genre[a].upper() for a in list(artist_lyrics.keys())]
     #plot_dendrogram(clustered, artist_names)
+    plot_dendrogram(linkage(lyrics_tfidf_matrix.toarray(), method='ward'), artist_names)
