@@ -14,6 +14,8 @@ import pandas as pd
 from scipy.cluster.hierarchy import linkage, dendrogram
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.cluster import KMeans
+from sklearn.decomposition import PCA as sklearnPCA
+from sklearn.preprocessing import StandardScaler
 from matplotlib import pyplot as plt
 
 def plot_dendrogram(clustered, artists):
@@ -97,17 +99,68 @@ if __name__ == '__main__':
     print('Distinct words per artist')
     words_per_artist(artist_lyrics, lyrics_tfidf_matrix, ix2word)
 
-    print('Clustering')
-    clustered = KMeans(n_clusters=10, n_init=50).fit(lyrics_tfidf_matrix)
+    
+    print('Clustering after number artists')
+    amount_of_cluster = 100
+    clustered = KMeans(n_clusters=amount_of_cluster, n_init=20).fit(lyrics_tfidf_matrix)
     order_centers = clustered.cluster_centers_.argsort()[:, ::-1]
     terms = vectorizer.get_feature_names()
-    for i in range(10):
+    """
+    for i in range(amount_of_cluster):
         print("Cluster %d" % i)
         for ind in order_centers[i, :30]:
             print(';%s' % terms[ind])
         print("\n")
+    """
+    
+    result = clustered.predict(vectorizer.transform(artist_lyrics))
+    #print(numpy.sort(result))
+    print('Number of different artists predicted: ' + str(len(set(result))))
+    
+    print('Clustering after number of genres')
+    amount_of_cluster = 10
+    clustered = KMeans(n_clusters=amount_of_cluster, n_init=20).fit(lyrics_tfidf_matrix)
+    order_centers = clustered.cluster_centers_.argsort()[:, ::-1]
+    terms = vectorizer.get_feature_names()
+    """
+    for i in range(amount_of_cluster):
+        print("Cluster %d" % i)
+        for ind in order_centers[i, :30]:
+            print(';%s' % terms[ind])
+        print("\n")
+    """
+    
+    result = clustered.predict(vectorizer.transform(artist_lyrics))
+    #print(numpy.sort(result))
+    print('Number of different genres predicted: ' + str(len(set(result))))
+    
 
-    print('Plotting')
+    print('Plotting Dendogram')
     artist_names = [a+': '+artist2genre[a].upper() for a in list(artist_lyrics.keys())]
     #plot_dendrogram(clustered, artist_names)
     plot_dendrogram(linkage(lyrics_tfidf_matrix.toarray(), method='ward'), artist_names)
+    
+    
+    print('PCA')
+    #very important step of standardizing the data, i.e. mean = 0 and variance = 1
+    X_std = StandardScaler().fit_transform(lyrics_tfidf_matrix.todense())
+    sklearn_pca = sklearnPCA(n_components=4)
+    Y_sklearn = sklearn_pca.fit_transform(X_std)
+    
+    comp0 = 0
+    comp1 = 1
+    
+    with plt.style.context('seaborn-whitegrid'):
+        plt.figure(figsize=(6, 4))
+        for label, coord in zip(artist2genre.keys(), Y_sklearn):
+            plt.scatter(coord[comp0], coord[comp1])
+            plt.annotate(label, (coord[comp0], coord[comp1]))
+        plt.xlabel('Principal Component {}'.format(comp0))
+        plt.ylabel('Principal Component {}'.format(comp1))
+        plt.tight_layout()
+        plt.show()
+     
+    plt.plot(sklearn_pca.explained_variance_ratio_)
+    
+    
+    
