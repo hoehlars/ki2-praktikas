@@ -72,7 +72,7 @@ def words_per_artist(artist_lyrics, lyrics_tfidf_matrix, ix2word, n=10):
             
             # check if over mean weight
             if tf_idf > mean_weight:
-                print(artist, word, tf_idf)
+                    print(artist, word, tf_idf)
              
 def getIx2Word(words):
     ix2word = {}
@@ -102,7 +102,7 @@ if __name__ == '__main__':
     
     print('Clustering after number artists')
     amount_of_cluster = 100
-    clustered = KMeans(n_clusters=amount_of_cluster, n_init=20).fit(lyrics_tfidf_matrix)
+    clustered = KMeans(n_clusters=amount_of_cluster, n_init=1).fit(lyrics_tfidf_matrix)
     order_centers = clustered.cluster_centers_.argsort()[:, ::-1]
     terms = vectorizer.get_feature_names()
     """
@@ -119,8 +119,8 @@ if __name__ == '__main__':
     
     print('Clustering after number of genres')
     amount_of_cluster = 10
-    clustered = KMeans(n_clusters=amount_of_cluster, n_init=20).fit(lyrics_tfidf_matrix)
-    order_centers = clustered.cluster_centers_.argsort()[:, ::-1]
+    clusteredgenres = KMeans(n_clusters=amount_of_cluster, n_init=1).fit(lyrics_tfidf_matrix)
+    order_centers = clusteredgenres.cluster_centers_.argsort()[:, ::-1]
     terms = vectorizer.get_feature_names()
     """
     for i in range(amount_of_cluster):
@@ -130,7 +130,7 @@ if __name__ == '__main__':
         print("\n")
     """
     
-    result = clustered.predict(vectorizer.transform(artist_lyrics))
+    result = clusteredgenres.predict(vectorizer.transform(artist_lyrics))
     #print(numpy.sort(result))
     print('Number of different genres predicted: ' + str(len(set(result))))
     
@@ -143,16 +143,21 @@ if __name__ == '__main__':
     
     print('PCA')
     #very important step of standardizing the data, i.e. mean = 0 and variance = 1
-    X_std = StandardScaler().fit_transform(lyrics_tfidf_matrix.todense())
-    sklearn_pca = sklearnPCA(n_components=4)
-    Y_sklearn = sklearn_pca.fit_transform(X_std)
+    
+    
+    
+    X = lyrics_tfidf_matrix.todense()
+    pca = sklearnPCA(n_components=10)
+    sklearn_pca = sklearnPCA().fit(X)
+    Y_pca = sklearn_pca.transform(X)
+    
     
     comp0 = 0
     comp1 = 1
     
     with plt.style.context('seaborn-whitegrid'):
         plt.figure(figsize=(6, 4))
-        for label, coord in zip(artist2genre.keys(), Y_sklearn):
+        for label, coord in zip(artist2genre.values(), Y_pca):
             plt.scatter(coord[comp0], coord[comp1])
             plt.annotate(label, (coord[comp0], coord[comp1]))
         plt.xlabel('Principal Component {}'.format(comp0))
