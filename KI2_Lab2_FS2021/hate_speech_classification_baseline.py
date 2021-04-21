@@ -22,6 +22,10 @@ from sklearn.model_selection import cross_val_predict, train_test_split
 from sklearn.metrics import classification_report, confusion_matrix
 from nltk.corpus import stopwords
 from nltk.stem.snowball import SnowballStemmer
+import numpy as np
+
+import tensorflow as tf
+from tensorflow import keras
 
 random.seed(42)  # Ensure reproducible results
 STEMMER = SnowballStemmer("english")
@@ -74,7 +78,7 @@ def read_data(remove_stopwords=True, remove_numbers=True, do_stem=True, reproces
 if __name__ == '__main__':
 
     print('Loading data', file=sys.stderr)
-    X, Y = read_data(reprocess=True)
+    X, Y = read_data(reprocess=False)
 
     print('Vectorizing with TFIDF', file=sys.stderr)
     tfidfizer = TfidfVectorizer(max_features=1000)
@@ -90,10 +94,33 @@ if __name__ == '__main__':
     # Randomly split data into 80% training and 20% testing, preserve class distribution with stratify
     X_train, X_test, Y_train, Y_test = train_test_split(X_tfidf_matrix, Y, test_size=0.2, random_state=42, stratify=Y)
 
-    clf.fit(X_train, Y_train)
-    y_pred = clf.predict(X_test)
-    print(classification_report(Y_test, y_pred), file=sys.stderr)
-    print(confusion_matrix(Y_test, y_pred.tolist()), file=sys.stderr)
+    #clf.fit(X_train, Y_train)
+    #y_pred = clf.predict(X_test)
+    #print(classification_report(Y_test, y_pred), file=sys.stderr)
+    #print(confusion_matrix(Y_test, y_pred.tolist()), file=sys.stderr)
+    
+    model = keras.Sequential()
+    model.add(keras.layers.Dense(500, input_shape=(X_tfidf_matrix.shape[1],)))
+    model.add(keras.layers.Activation('relu'))
+    model.add(keras.layers.Dropout(0.5))
+    model.add(keras.layers.Dense(250, input_shape=(500,)))
+    model.add(keras.layers.Activation('relu'))
+    model.add(keras.layers.Dropout(0.5))
+    model.add(keras.layers.Dense(100, input_shape=(250,)))
+    model.add(keras.layers.Activation('relu'))
+    model.add(keras.layers.Dropout(0.25))
+    model.add(keras.layers.Dense(1, input_shape=(100,)))
+    model.add(keras.layers.Activation('sigmoid'))
+    # last result: loss: 0.0352 - accuracy: 0.9586 - val_loss: 0.0391 - val_accuracy: 0.9547
+    
+    opt = keras.optimizers.SGD(lr=0.1) #Default lr=0.01
+    
+    model.compile(optimizer=opt, loss='mse', metrics=['accuracy'])
+    print(model.summary())
+    history = model.fit(X_train, Y_train, epochs=30, batch_size=64, validation_data=(X_test, Y_test))
+    print(history.history)
+    
+    # Maybe something like this? https://vitalflux.com/python-keras-learning-validation-curve-classification-model/
 
     """
     # Apply cross-validation, create prediction for all data point
