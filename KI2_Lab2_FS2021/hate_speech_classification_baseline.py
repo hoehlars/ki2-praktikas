@@ -101,7 +101,7 @@ if __name__ == '__main__':
     #print(classification_report(Y_test, y_pred), file=sys.stderr)
     #print(confusion_matrix(Y_test, y_pred.tolist()), file=sys.stderr)
 
-    
+
     use_dnn = True
         if use_dnn:
         """
@@ -149,7 +149,8 @@ if __name__ == '__main__':
         model.compile(optimizer = "adam", loss="binary_crossentropy", metrics=["accuracy"])
         history = model.fit(X_train, Y_train, epochs=30, batch_size=64, validation_data=(X_test, Y_test))
         print(model.summary())
-        print(history.history)
+        print(history.history)    
+    
 
     """
     Plot different statistics about the model
@@ -187,5 +188,3 @@ if __name__ == '__main__':
     print(np.array(Y_test))
     print(y_pred_bool)
     print(classification_report(np.array(Y_test), y_pred_bool))
-    
-    
