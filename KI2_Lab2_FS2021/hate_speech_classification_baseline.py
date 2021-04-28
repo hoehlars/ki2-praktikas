@@ -103,7 +103,7 @@ if __name__ == '__main__':
 
 
     use_dnn = True
-        if use_dnn:
+    if use_dnn:
         """
         # Apply cross-validation, create prediction for all data point
         numcv = 3   # Number of folds
