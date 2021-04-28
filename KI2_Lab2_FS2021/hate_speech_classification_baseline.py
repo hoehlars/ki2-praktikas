@@ -26,6 +26,8 @@ import numpy as np
 
 import tensorflow as tf
 from tensorflow import keras
+import spacy
+import matplotlib.pyplot as plt
 
 random.seed(42)  # Ensure reproducible results
 STEMMER = SnowballStemmer("english")
@@ -98,9 +100,22 @@ if __name__ == '__main__':
     #y_pred = clf.predict(X_test)
     #print(classification_report(Y_test, y_pred), file=sys.stderr)
     #print(confusion_matrix(Y_test, y_pred.tolist()), file=sys.stderr)
+
     
     use_dnn = True
-    if use_dnn:
+        if use_dnn:
+        """
+        # Apply cross-validation, create prediction for all data point
+        numcv = 3   # Number of folds
+        print('Using', numcv, 'folds', file=sys.stderr)
+        y_pred = cross_val_predict(clf, X_tfidf_matrix, Y, cv=numcv)
+        print(classification_report(Y, y_pred), file=sys.stderr)
+        """
+        
+        """
+        Train the model 
+        """
+        
         model = keras.Sequential()
         model.add(keras.layers.Dense(500, input_shape=(X_tfidf_matrix.shape[1],)))
         model.add(keras.layers.Activation('relu'))
@@ -119,10 +134,8 @@ if __name__ == '__main__':
         
         model.compile(optimizer=opt, loss='mse', metrics=['accuracy'])
         print(model.summary())
-        history = model.fit(X_train, Y_train, epochs=30, batch_size=64, validation_data=(X_test, Y_test))
+        history = model.fit(X_train.toarray(), np.array(Y_train), epochs=30, batch_size=64, validation_data=(X_test.toarray(), np.array(Y_test)))
         print(history.history)
-        
-        # Maybe something like this? https://vitalflux.com/python-keras-learning-validation-curve-classification-model/
         
     use_cnn = False
     if use_cnn:
@@ -139,9 +152,40 @@ if __name__ == '__main__':
         print(history.history)
 
     """
-    # Apply cross-validation, create prediction for all data point
-    numcv = 3   # Number of folds
-    print('Using', numcv, 'folds', file=sys.stderr)
-    y_pred = cross_val_predict(clf, X_tfidf_matrix, Y, cv=numcv)
-    print(classification_report(Y, y_pred), file=sys.stderr)
+    Plot different statistics about the model
     """
+    history_dict = history.history
+    loss_values = history_dict['loss']
+    val_loss_values = history_dict['val_loss']
+    accuracy = history_dict['accuracy']
+    val_accuracy = history_dict['val_accuracy']
+     
+    epochs = range(1, len(loss_values) + 1)
+    fig, ax = plt.subplots(1, 2, figsize=(14, 6))
+    #
+    # Plot the model accuracy vs Epochs
+    #
+    ax[0].plot(epochs, accuracy, 'bo', label='Training accuracy')
+    ax[0].plot(epochs, val_accuracy, 'b', label='Validation accuracy')
+    ax[0].set_title('Training & Validation Accuracy', fontsize=16)
+    ax[0].set_xlabel('Epochs', fontsize=16)
+    ax[0].set_ylabel('Accuracy', fontsize=16)
+    ax[0].legend()
+    #
+    # Plot the loss vs Epochs
+    #
+    ax[1].plot(epochs, loss_values, 'bo', label='Training loss')
+    ax[1].plot(epochs, val_loss_values, 'b', label='Validation loss')
+    ax[1].set_title('Training & Validation Loss', fontsize=16)
+    ax[1].set_xlabel('Epochs', fontsize=16)
+    ax[1].set_ylabel('Loss', fontsize=16)
+    ax[1].legend()
+    
+    y_pred = model.predict(X_test.toarray(), batch_size=64, verbose=1)
+    y_pred_bool = np.around(y_pred)
+    
+    print(np.array(Y_test))
+    print(y_pred_bool)
+    print(classification_report(np.array(Y_test), y_pred_bool))
+    
+    
