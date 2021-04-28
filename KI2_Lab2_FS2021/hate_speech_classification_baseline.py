@@ -90,7 +90,7 @@ if __name__ == '__main__':
         print('Downsampled data shape:', X_tfidf_matrix.shape)
 
     print('Classification and evaluation', file=sys.stderr)
-    clf = LinearSVC(class_weight='balanced')    # Weight samples inverse to class imbalance
+    #clf = LinearSVC(class_weight='balanced')    # Weight samples inverse to class imbalance
     # Randomly split data into 80% training and 20% testing, preserve class distribution with stratify
     X_train, X_test, Y_train, Y_test = train_test_split(X_tfidf_matrix, Y, test_size=0.2, random_state=42, stratify=Y)
 
@@ -99,28 +99,44 @@ if __name__ == '__main__':
     #print(classification_report(Y_test, y_pred), file=sys.stderr)
     #print(confusion_matrix(Y_test, y_pred.tolist()), file=sys.stderr)
     
-    model = keras.Sequential()
-    model.add(keras.layers.Dense(500, input_shape=(X_tfidf_matrix.shape[1],)))
-    model.add(keras.layers.Activation('relu'))
-    model.add(keras.layers.Dropout(0.5))
-    model.add(keras.layers.Dense(250, input_shape=(500,)))
-    model.add(keras.layers.Activation('relu'))
-    model.add(keras.layers.Dropout(0.5))
-    model.add(keras.layers.Dense(100, input_shape=(250,)))
-    model.add(keras.layers.Activation('relu'))
-    model.add(keras.layers.Dropout(0.25))
-    model.add(keras.layers.Dense(1, input_shape=(100,)))
-    model.add(keras.layers.Activation('sigmoid'))
-    # last result: loss: 0.0352 - accuracy: 0.9586 - val_loss: 0.0391 - val_accuracy: 0.9547
-    
-    opt = keras.optimizers.SGD(lr=0.1) #Default lr=0.01
-    
-    model.compile(optimizer=opt, loss='mse', metrics=['accuracy'])
-    print(model.summary())
-    history = model.fit(X_train, Y_train, epochs=30, batch_size=64, validation_data=(X_test, Y_test))
-    print(history.history)
-    
-    # Maybe something like this? https://vitalflux.com/python-keras-learning-validation-curve-classification-model/
+    use_dnn = True
+    if use_dnn:
+        model = keras.Sequential()
+        model.add(keras.layers.Dense(500, input_shape=(X_tfidf_matrix.shape[1],)))
+        model.add(keras.layers.Activation('relu'))
+        model.add(keras.layers.Dropout(0.5))
+        model.add(keras.layers.Dense(250, input_shape=(500,)))
+        model.add(keras.layers.Activation('relu'))
+        model.add(keras.layers.Dropout(0.5))
+        model.add(keras.layers.Dense(100, input_shape=(250,)))
+        model.add(keras.layers.Activation('relu'))
+        model.add(keras.layers.Dropout(0.25))
+        model.add(keras.layers.Dense(1, input_shape=(100,)))
+        model.add(keras.layers.Activation('sigmoid'))
+        # last result: loss: 0.0352 - accuracy: 0.9586 - val_loss: 0.0391 - val_accuracy: 0.9547
+        
+        opt = keras.optimizers.SGD(lr=0.1) #Default lr=0.01
+        
+        model.compile(optimizer=opt, loss='mse', metrics=['accuracy'])
+        print(model.summary())
+        history = model.fit(X_train, Y_train, epochs=30, batch_size=64, validation_data=(X_test, Y_test))
+        print(history.history)
+        
+        # Maybe something like this? https://vitalflux.com/python-keras-learning-validation-curve-classification-model/
+        
+    use_cnn = False
+    if use_cnn:
+        model = keras.Sequential()
+        model.add(keras.layers.Conv1D(128, kernel_size=4, activation='relu'))
+        model.add(keras.layers.MaxPooling1D(pool_size=3))
+        model.add(keras.layers.LSTM(32, recurrent_dropout = 0.4))
+        model.add(keras.layers.Dropout(0.2))
+        model.add(keras.layers.Dense(1, activation = "sigmoid"))
+        
+        model.compile(optimizer = "adam", loss="binary_crossentropy", metrics=["accuracy"])
+        history = model.fit(X_train, Y_train, epochs=30, batch_size=64, validation_data=(X_test, Y_test))
+        print(model.summary())
+        print(history.history)
 
     """
     # Apply cross-validation, create prediction for all data point
