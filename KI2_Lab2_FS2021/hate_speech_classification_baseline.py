@@ -23,6 +23,7 @@ from sklearn.metrics import classification_report, confusion_matrix
 from nltk.corpus import stopwords
 from nltk.stem.snowball import SnowballStemmer
 import numpy as np
+from keras.callbacks import EarlyStopping
 
 import tensorflow as tf
 from tensorflow import keras
@@ -83,7 +84,7 @@ if __name__ == '__main__':
     X, Y = read_data(reprocess=False)
 
     print('Vectorizing with TFIDF', file=sys.stderr)
-    tfidfizer = TfidfVectorizer(max_features=1000)
+    tfidfizer = TfidfVectorizer(max_features=1500)
     X_tfidf_matrix = tfidfizer.fit_transform(X)
     print('Data shape:', X_tfidf_matrix.shape)
     do_downsample = True
@@ -99,8 +100,6 @@ if __name__ == '__main__':
     #clf.fit(X_train, Y_train)
     #y_pred = clf.predict(X_test)
     #print(classification_report(Y_test, y_pred), file=sys.stderr)
-    #print(confusion_matrix(Y_test, y_pred.tolist()), file=sys.stderr)
-
 
     use_dnn = True
     if use_dnn:
@@ -116,26 +115,29 @@ if __name__ == '__main__':
         Train the model 
         """
         
-        model = keras.Sequential()
-        model.add(keras.layers.Dense(500, input_shape=(X_tfidf_matrix.shape[1],)))
-        model.add(keras.layers.Activation('relu'))
-        model.add(keras.layers.Dropout(0.5))
-        model.add(keras.layers.Dense(250, input_shape=(500,)))
-        model.add(keras.layers.Activation('relu'))
-        model.add(keras.layers.Dropout(0.5))
-        model.add(keras.layers.Dense(100, input_shape=(250,)))
-        model.add(keras.layers.Activation('relu'))
-        model.add(keras.layers.Dropout(0.25))
-        model.add(keras.layers.Dense(1, input_shape=(100,)))
-        model.add(keras.layers.Activation('sigmoid'))
-        # last result: loss: 0.0352 - accuracy: 0.9586 - val_loss: 0.0391 - val_accuracy: 0.9547
-        
-        opt = keras.optimizers.SGD(lr=0.1) #Default lr=0.01
-        
-        model.compile(optimizer=opt, loss='mse', metrics=['accuracy'])
-        print(model.summary())
-        history = model.fit(X_train.toarray(), np.array(Y_train), epochs=30, batch_size=64, validation_data=(X_test.toarray(), np.array(Y_test)))
-        print(history.history)
+    """
+    Train the model 
+    """
+    
+    model = keras.Sequential()
+    model.add(keras.layers.Dense(16, input_shape=(X_tfidf_matrix.shape[1],)))
+    model.add(keras.layers.Activation('relu'))
+    model.add(keras.layers.Dropout(0.3))
+    model.add(keras.layers.Dense(16, input_shape=(16,)))
+    model.add(keras.layers.Activation('relu'))
+    model.add(keras.layers.Dropout(0.2))
+    model.add(keras.layers.Dense(1, input_shape=(16,)))
+    model.add(keras.layers.Activation('sigmoid'))
+    # last result: loss: 0.0352 - accuracy: 0.9586 - val_loss: 0.0391 - val_accuracy: 0.9547
+    
+    
+    es = EarlyStopping(monitor='val_loss', mode='min', verbose=1, patience=5)
+    
+    opt = keras.optimizers.SGD(lr=0.1) #Default lr=0.01
+    
+    model.compile(optimizer=opt, loss='mse', metrics=['accuracy'])
+    print(model.summary())
+    history = model.fit(X_train.toarray(), np.array(Y_train), epochs=100, validation_data=(X_test.toarray(), np.array(Y_test)), callbacks=[es])
         
     use_cnn = False
     if use_cnn:
@@ -147,9 +149,17 @@ if __name__ == '__main__':
         model.add(keras.layers.Dense(1, activation = "sigmoid"))
         
         model.compile(optimizer = "adam", loss="binary_crossentropy", metrics=["accuracy"])
-        history = model.fit(X_train, Y_train, epochs=30, batch_size=64, validation_data=(X_test, Y_test))
+        history = model.fit(X_train.toarray(), np.array(Y_train), epochs=30, batch_size=64, validation_data=(X_test.toarray(), np.array(Y_test)))
         print(model.summary())
         print(history.history)    
+    
+    """
+    # Apply cross-validation, create prediction for all data point
+    numcv = 3   # Number of folds
+    print('Using', numcv, 'folds', file=sys.stderr)
+    y_pred = cross_val_predict(clf, X_tfidf_matrix, Y, cv=numcv)
+    print(classification_report(Y, y_pred), file=sys.stderr)
+    """
     
 
     """
