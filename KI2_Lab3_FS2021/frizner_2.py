@@ -40,7 +40,7 @@ class LunarLander(object):
         self._model_ = model
 
         # Counter of training episodes
-        self.episodes = 810
+        self.episodes = 0
 
         # numpy arrays to save history
         self.history = dict()
@@ -280,7 +280,7 @@ if __name__ == '__main__':
             num_episodes=2000,
             num_learn=num_learn,
             epochs=epoch,
-            eps=0.214,
+            eps=1.0,
             min_eps=0.1,
             epsilon_decay=0.998,
             verbose=1,
