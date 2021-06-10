@@ -1,4 +1,5 @@
 # From: https://github.com/lazavgeridis/LunarLander-v2, dqn version
+# Adapted for better ploting
 
 import gym
 import torch
@@ -155,7 +156,13 @@ def update_target_network(qnet, qtarget_net):
 def save_model(qnet, episode, path):
     torch.save(qnet.state_dict(), os.path.join(path, 'qnetwork_{}.pt'.format(episode)))
 
+def moving_average(a, n=3) :
+    ret = np.cumsum(a, dtype=float)
+    ret[n:] = ret[n:] - ret[:-n]
+    return ret[n - 1:] / n
+
 def plot_rewards(chosen_agents, agents_returns, num_episodes, window):
+    """
     num_intervals = int(num_episodes / window)
     for agent, agent_total_returns in zip(chosen_agents, agents_returns):
         print(len(agent_total_returns))
@@ -164,11 +171,22 @@ def plot_rewards(chosen_agents, agents_returns, num_episodes, window):
         for j in range(num_intervals):
             l.append(round(np.mean(agent_total_returns[j * 100 : (j + 1) * 100]), 1))
         plt.plot(range(0, num_episodes, window), l)
-
     plt.xlabel("Episodes")
     plt.ylabel("Reward per {} episodes".format(window))
     plt.title("RL Lander(s)")
     plt.legend(chosen_agents, loc="lower right")
+    plt.show()
+    """
+    for agent, agent_total_returns in zip(chosen_agents, agents_returns):
+        reward_per_episode = agent_total_returns
+
+    fig, ax = plt.subplots(1, 1, figsize=(14, 6))
+    ax.plot(range(1, len(reward_per_episode) + 1), reward_per_episode, 'b', label='Episode Reward')
+    ax.plot(range(1, len(reward_per_episode) - 99 + 1), moving_average(reward_per_episode, 100), 'r', label='Moving Average (100)')
+    ax.set_title('Episode Reward over time', fontsize=16)
+    ax.set_xlabel('Episode', fontsize=16)
+    ax.set_ylabel('Reward', fontsize=16)
+    ax.legend()
     plt.show()
 
 def dqn_lander(env, n_episodes, gamma, lr, min_eps, \
